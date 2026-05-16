@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arc-fusion/schemas/binary_manifest.schema.json",
+  "type": "object",
+  "required": [
+    "schema",
+    "payload_hash",
+    "chunks",
+    "merkle_root",
+    "manifest_hash"
+  ],
+  "properties": {
+    "schema": {
+      "const": "arc-fusion.binary-manifest.v1"
+    },
+    "payload_hash": {
+      "type": "string"
+    },
+    "manifest_hash": {
+      "type": "string"
+    },
+    "merkle_root": {
+      "type": "string"
+    },
+    "chunks": {
+      "type": "array"
+    }
+  }
+}

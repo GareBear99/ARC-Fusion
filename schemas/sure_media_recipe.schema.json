@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema",
+    "generator_id",
+    "seed",
+    "params_hash",
+    "recipe_hash"
+  ],
+  "properties": {
+    "schema": {
+      "const": "arc-fusion.sure-media-recipe.v1"
+    },
+    "generator_id": {
+      "type": "string"
+    },
+    "seed": {
+      "type": "string"
+    },
+    "params_hash": {
+      "type": "string"
+    },
+    "recipe_hash": {
+      "type": "string"
+    }
+  }
+}

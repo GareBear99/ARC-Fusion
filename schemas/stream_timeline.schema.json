@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema",
+    "source_payload_hash",
+    "frame_count",
+    "frames"
+  ],
+  "properties": {
+    "schema": {
+      "const": "arc-fusion.stream-timeline.v1"
+    },
+    "source_payload_hash": {
+      "type": "string"
+    },
+    "frame_count": {
+      "type": "integer"
+    },
+    "frames": {
+      "type": "array"
+    }
+  }
+}
