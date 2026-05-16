@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ARC-Fusion Command Plan",
+  "type": "object",
+  "required": ["schema", "operation", "input_path", "ffmpeg_args", "ffprobe_args", "policy", "plan_hash"],
+  "properties": {
+    "schema": {"const": "arc-fusion.command-plan.v1"},
+    "operation": {"type": "string"},
+    "input_path": {"type": "string"},
+    "output_path": {"type": ["string", "null"]},
+    "ffmpeg_args": {"type": "array", "items": {"type": "string"}},
+    "ffprobe_args": {"type": "array", "items": {"type": "string"}},
+    "policy": {"type": "object"},
+    "plan_hash": {"type": "string", "pattern": "^sha256:"},
+    "created_at_unix": {"type": "integer"},
+    "deterministic_notes": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -1,31 +1,32 @@
 # Roadmap
 
-## v0.3.0 complete
+## v0.4 complete baseline
 
-- Repo-ready CLI
-- Binary object store
-- Receipts
-- Ed25519 signing
-- FFmpeg-backed ingest
-- Scene/keyframe index
-- ARC-Core route/migration stubs
-- Language mirror
-- LLMBuilder export scaffold
+- Deterministic command plans
+- FFmpeg-backed transcode proof path
+- Local SQLite index
+- Codec boundary manifest
+- Stronger public docs
 
-## v0.4.0 target
+## v0.5 target
 
-- Live ARC-Core registration client
-- Optional AES-GCM payload encryption
-- Better FFmpeg command-plan receipts
-- Real scene detection mode using ffmpeg scene filter
-- OCR adapter boundary
-- Whisper/transcription adapter boundary
-- Proto-Synth timeline export
+- ARC-Core registration client against a live API
+- Signed receipt default path
+- Better scene detection adapters
+- OCR/transcription adapter interfaces with no fake labels
+- First native WAV/PCM reader/writer tests
+
+## v0.6 target
+
+- Filtergraph DSL exported to FFmpeg
+- Golden media test vectors
+- Proto-Synth timeline visualization export
+- Arc-RAR media bundle export/import
 
 ## v1.0 target
 
-- Stable binary media memory runtime
-- ARC-Core authority integration
-- signed/encrypted payload policy
-- deterministic replay receipts
-- dataset export with verified labels
+- Stable ARC media proof runtime
+- live ARC-Core authority registration
+- StreamMemory sequence interoperability
+- documented native-module boundary
+- public release suitable for outside contributors

@@ -2,9 +2,9 @@ from __future__ import annotations
 import argparse, json, sys
 from pathlib import Path
 from .store import init_store, pack_file, verify_manifest, restore_manifest, write_receipt, load_manifest
-from .pipeline import probe_media, ingest_media, sure_recipe
+from .pipeline import probe_media, ingest_media, sure_recipe, transcode_media
 from .crypto import keygen, sign_json, verify_json
-from .ffmpeg_backend import has_tool
+from .ffmpeg_backend import has_tool, tool_version
 
 def emit(obj):
     print(json.dumps(obj, indent=2, sort_keys=True))
@@ -30,13 +30,17 @@ def main(argv=None):
     sp = sub.add_parser("sure-recipe"); sp.add_argument("generator_id"); sp.add_argument("seed"); sp.add_argument("--params-json", default="{}"); sp.add_argument("--expected-output-hash", default=None)
     sp = sub.add_parser("mirror-language"); sp.add_argument("path")
     sp = sub.add_parser("export-llmbuilder"); sp.add_argument("timeline_manifest"); sp.add_argument("output_jsonl")
+    sp = sub.add_parser("plan-transcode"); sp.add_argument("input"); sp.add_argument("output"); sp.add_argument("--vcodec", default="libx264"); sp.add_argument("--acodec", default="aac"); sp.add_argument("--preset", default="medium"); sp.add_argument("--crf", type=int, default=18)
+    sp = sub.add_parser("transcode"); sp.add_argument("input"); sp.add_argument("output"); sp.add_argument("--vcodec", default="libx264"); sp.add_argument("--acodec", default="aac"); sp.add_argument("--preset", default="medium"); sp.add_argument("--crf", type=int, default=18)
+    sub.add_parser("codec-boundaries")
+    sub.add_parser("index-summary")
     sub.add_parser("arc-core-route-stub")
 
     a = p.parse_args(argv)
     store = Path(a.store)
 
     if a.cmd == "doctor":
-        emit({"arc_fusion": "0.3.0", "ffmpeg": has_tool("ffmpeg"), "ffprobe": has_tool("ffprobe"), "store": str(store)})
+        emit({"arc_fusion": "0.4.0", "ffmpeg": has_tool("ffmpeg"), "ffprobe": has_tool("ffprobe"), "ffmpeg_version": tool_version("ffmpeg"), "ffprobe_version": tool_version("ffprobe"), "store": str(store)})
     elif a.cmd == "init-store":
         emit(init_store(store))
     elif a.cmd == "pack":
@@ -83,12 +87,23 @@ def main(argv=None):
         row = {"schema": "arc-fusion.llmbuilder-export-row.v1", "timeline_manifest_hash": m.get("manifest_hash"), "source_label": m.get("label"), "annotation": None, "requires_human_or_model_labeling": True}
         Path(a.output_jsonl).write_text(json.dumps(row, sort_keys=True) + "\n", encoding="utf-8")
         emit({"ok": True, "output_jsonl": a.output_jsonl, "rows": 1})
+    elif a.cmd == "plan-transcode":
+        from .planner import make_transcode_plan, write_plan
+        emit(write_plan(store, make_transcode_plan(Path(a.input), Path(a.output), vcodec=a.vcodec, acodec=a.acodec, preset=a.preset, crf=a.crf)))
+    elif a.cmd == "transcode":
+        emit(transcode_media(Path(a.input), Path(a.output), store, vcodec=a.vcodec, acodec=a.acodec, preset=a.preset, crf=a.crf))
+    elif a.cmd == "codec-boundaries":
+        from .planner import codec_boundary_manifest
+        emit(codec_boundary_manifest())
+    elif a.cmd == "index-summary":
+        from .index import summarize_index
+        emit(summarize_index(store))
     elif a.cmd == "arc-core-route-stub":
         emit({"route": "POST /arc-apache/payloads/register", "status": "stub", "see": "integrations/arc_core/routes_arc_fusion.py"})
     elif a.cmd == "smoke":
         init_store(store)
         payload = store / "smoke.txt"
-        payload.write_text("arc-fusion smoke v0.3", encoding="utf-8")
+        payload.write_text("arc-fusion smoke v0.4", encoding="utf-8")
         manifest = pack_file(payload, store)
         verify = verify_manifest(Path(manifest["manifest_path"]), store)
         receipt = write_receipt(store, "arc_fusion.smoke", {"manifest_hash": manifest["manifest_hash"]})

@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 import json, tempfile
 from .store import init_store, pack_file, pack_bytes, write_receipt
 from .crypto import canonical_json_bytes, sha256_json
-from .ffmpeg_backend import ffprobe, extract_frames, extract_audio_preview, scene_index_from_probe
+from .ffmpeg_backend import ffprobe, extract_frames, extract_audio_preview, scene_index_from_probe, tool_version, run_ffmpeg_plan
 
 def probe_media(input_path: Path, store: Path) -> Dict[str, Any]:
     init_store(store)
@@ -53,6 +53,8 @@ def ingest_media(input_path: Path, store: Path, fps: str = "1", frame_limit: int
         "frame_count": len(frame_manifests),
         "audio_preview": audio_manifest["manifest_hash"] if audio_manifest else None,
         "ffmpeg_available": frame_result.get("available") or audio_result.get("available"),
+        "ffmpeg_version": tool_version("ffmpeg"),
+        "ffprobe_version": tool_version("ffprobe"),
     })
     return {
         "input_manifest": input_manifest,
@@ -77,3 +79,48 @@ def sure_recipe(store: Path, generator_id: str, seed: str, params: Dict[str, Any
     manifest = pack_bytes(canonical_json_bytes(recipe), store, label="sure_media_recipe.json", mime="application/json")
     receipt = write_receipt(store, "arc_fusion.sure.recipe", {"recipe_manifest_hash": manifest["manifest_hash"], "generator_id": generator_id})
     return {"recipe": recipe, "manifest": manifest, "receipt": receipt}
+
+
+def transcode_media(input_path: Path, output_path: Path, store: Path, *, vcodec: str = "libx264", acodec: str = "aac", preset: str = "medium", crf: int = 18) -> Dict[str, Any]:
+    """Execute an FFmpeg-backed transcode through a deterministic ARC command plan.
+
+    This is intentionally backend-backed, not native codec parity. ARC-Fusion adds the proof plane:
+    input manifest, command plan manifest, output manifest, backend version, execution log, receipt.
+    """
+    from .planner import make_transcode_plan, write_plan
+    from .crypto import sha256_json
+    import time
+    init_store(store)
+    input_manifest = pack_file(input_path, store, label=input_path.name)
+    plan = make_transcode_plan(input_path, output_path, vcodec=vcodec, acodec=acodec, preset=preset, crf=crf)
+    plan_record = write_plan(store, plan)
+    run = run_ffmpeg_plan(plan["ffmpeg_args"])
+    output_manifest = None
+    if run.get("ok") and output_path.exists():
+        output_manifest = pack_file(output_path, store, label=output_path.name)
+    execution = {
+        "schema": "arc-fusion.media-execution.v1",
+        "operation": "transcode",
+        "input_manifest_hash": input_manifest["manifest_hash"],
+        "plan_hash": plan["plan_hash"],
+        "plan_manifest_hash": plan_record["manifest"]["manifest_hash"],
+        "output_manifest_hash": output_manifest["manifest_hash"] if output_manifest else None,
+        "ffmpeg_version": tool_version("ffmpeg"),
+        "run": run,
+    }
+    execution_manifest = pack_bytes(canonical_json_bytes(execution), store, label="transcode.execution.json", mime="application/json")
+    receipt = write_receipt(store, "arc_fusion.media.transcode", {
+        "input_manifest_hash": input_manifest["manifest_hash"],
+        "plan_hash": plan["plan_hash"],
+        "plan_manifest_hash": plan_record["manifest"]["manifest_hash"],
+        "execution_manifest_hash": execution_manifest["manifest_hash"],
+        "output_manifest_hash": output_manifest["manifest_hash"] if output_manifest else None,
+        "status": "ok" if run.get("ok") else "failed_or_unavailable",
+        "ffmpeg_version": tool_version("ffmpeg"),
+    })
+    try:
+        from .index import index_job
+        index_job(store, {"job_hash":"sha256:" + sha256_json({"plan": plan["plan_hash"], "receipt": receipt["receipt_hash"]}), "operation":"transcode", "input_manifest_hash":input_manifest["manifest_hash"], "output_manifest_hash": output_manifest["manifest_hash"] if output_manifest else None, "plan_hash": plan["plan_hash"], "receipt_hash": receipt["receipt_hash"], "status":"ok" if run.get("ok") else "failed_or_unavailable", "created_at_unix": int(time.time())})
+    except Exception:
+        pass
+    return {"input_manifest": input_manifest, "plan": plan_record, "execution_manifest": execution_manifest, "output_manifest": output_manifest, "receipt": receipt, "run": run}

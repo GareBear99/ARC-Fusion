@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arc-fusion"
-version = "0.3.0"
-description = "ARC-native FFmpeg-backed binary-first cryptographic media runtime."
+version = "0.4.0"
+description = "ARC-native FFmpeg-backed binary-first cryptographic media runtime with deterministic job planning and proof receipts."
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "Apache-2.0"}

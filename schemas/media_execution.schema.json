@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ARC-Fusion Media Execution",
+  "type": "object",
+  "required": ["schema", "operation", "input_manifest_hash", "plan_hash", "plan_manifest_hash", "run"],
+  "properties": {
+    "schema": {"const": "arc-fusion.media-execution.v1"},
+    "operation": {"type": "string"},
+    "input_manifest_hash": {"type": "string", "pattern": "^sha256:"},
+    "plan_hash": {"type": "string", "pattern": "^sha256:"},
+    "plan_manifest_hash": {"type": "string", "pattern": "^sha256:"},
+    "output_manifest_hash": {"type": ["string", "null"]},
+    "ffmpeg_version": {"type": ["string", "null"]},
+    "run": {"type": "object"}
+  }
+}

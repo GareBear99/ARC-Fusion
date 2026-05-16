@@ -43,6 +43,11 @@ def pack_bytes(data: bytes, store: Path, label: str = "payload", mime: str = "ap
     mp = store / "manifests" / f"{manifest['manifest_hash'].split(':')[1]}.manifest.json"
     mp.write_bytes(canonical_json_bytes(manifest))
     manifest["manifest_path"] = str(mp)
+    try:
+        from .index import index_manifest
+        index_manifest(store, manifest)
+    except Exception:
+        pass
     return manifest
 
 def pack_file(path: Path, store: Path, label: str | None = None, chunk_size: int = DEFAULT_CHUNK_SIZE) -> Dict[str, Any]:
@@ -92,4 +97,9 @@ def write_receipt(store: Path, event_type: str, payload: Dict[str, Any]) -> Dict
     rp = store / "receipts" / f"{r['receipt_hash'].split(':')[1]}.receipt.json"
     rp.write_bytes(canonical_json_bytes(r))
     r["receipt_path"] = str(rp)
+    try:
+        from .index import index_receipt
+        index_receipt(store, r)
+    except Exception:
+        pass
     return r

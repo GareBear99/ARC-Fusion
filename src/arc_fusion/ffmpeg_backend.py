@@ -55,3 +55,25 @@ def scene_index_from_probe(probe: Dict[str, Any], frames: List[Dict[str, Any]]) 
             for i, f in enumerate(frames)
         ],
     }
+
+
+def tool_version(name: str) -> str | None:
+    import subprocess
+    if not has_tool(name):
+        return None
+    try:
+        p = subprocess.run([name, "-version"], capture_output=True, text=True, timeout=10)
+        first = (p.stdout or p.stderr).splitlines()[0] if (p.stdout or p.stderr) else ""
+        return first.strip() or None
+    except Exception:
+        return None
+
+def run_ffmpeg_plan(args: list[str]) -> dict:
+    import subprocess, time
+    if not args or args[0] != "ffmpeg":
+        return {"ok": False, "error": "plan must start with ffmpeg"}
+    if not has_tool("ffmpeg"):
+        return {"ok": False, "available": False, "error": "ffmpeg not found"}
+    started = int(time.time())
+    p = subprocess.run(args, capture_output=True, text=True)
+    return {"ok": p.returncode == 0, "available": True, "returncode": p.returncode, "started_at_unix": started, "completed_at_unix": int(time.time()), "stdout_tail": (p.stdout or "")[-4000:], "stderr_tail": (p.stderr or "")[-4000:]}
