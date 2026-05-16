@@ -1,11 +1,5 @@
-# Language Module and LLMBuilder Hooks
+# Language Module and LLMBuilder
 
-ARC-Fusion does not invent labels. It emits source-backed lineage rows so OCR, captions, transcripts, or human annotations can attach later.
+ARC-Fusion does not invent captions or transcripts. It exports verified lineage rows with blank annotation fields. OCR, transcription, captions, and human review can fill those fields later while preserving source frame/video hashes.
 
-Future rows should bind:
-
-```text
-annotation -> language object hash -> source frame hash -> source video hash -> receipt chain
-```
-
-This keeps datasets auditable and prevents silent synthetic contamination.
+The ARC Language Module can be mirrored into the binary store so lexical data is part of the same proof system.

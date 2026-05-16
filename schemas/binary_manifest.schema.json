@@ -1,29 +1,36 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://arc-fusion/schemas/binary_manifest.schema.json",
+  "$id": "arc-fusion.binary_manifest.v0.2",
   "type": "object",
   "required": [
     "schema",
     "payload_hash",
-    "chunks",
+    "chunk_hashes",
     "merkle_root",
-    "manifest_hash"
+    "manifest_hash",
+    "size_bytes"
   ],
   "properties": {
     "schema": {
-      "const": "arc-fusion.binary-manifest.v1"
+      "const": "arc-fusion.binary_manifest.v0.2"
     },
     "payload_hash": {
+      "type": "string"
+    },
+    "chunk_hashes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "merkle_root": {
       "type": "string"
     },
     "manifest_hash": {
       "type": "string"
     },
-    "merkle_root": {
-      "type": "string"
-    },
-    "chunks": {
-      "type": "array"
+    "size_bytes": {
+      "type": "integer"
     }
   }
 }

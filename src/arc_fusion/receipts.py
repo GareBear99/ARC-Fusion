@@ -1,33 +1,21 @@
 from __future__ import annotations
-
-import json
-import time
+import json, time
 from pathlib import Path
-from typing import Dict, Any
-from .hash_utils import sha256_bytes
+from .hash_utils import sha256_bytes, canonical_json_bytes
 
-
-def canonical_hash(obj: Dict[str, Any]) -> str:
-    tmp = dict(obj)
-    tmp.pop('receipt_hash', None)
-    raw = json.dumps(tmp, sort_keys=True, separators=(',', ':')).encode('utf-8')
-    return sha256_bytes(raw)
-
-
-def make_receipt(event_type: str, status: str, data: Dict[str, Any]) -> Dict[str, Any]:
-    receipt = {
-        'schema': 'arc-fusion.receipt.v1',
+def make_receipt(event_type: str, payload: dict, status: str = 'ok') -> dict:
+    r = {
+        'schema': 'arc-fusion.receipt.v0.2',
         'event_type': event_type,
         'status': status,
         'created_unix': int(time.time()),
-        'data': data,
+        'payload': payload,
     }
-    receipt['receipt_hash'] = canonical_hash(receipt)
-    return receipt
+    r['receipt_hash'] = sha256_bytes(canonical_json_bytes(r))
+    return r
 
-
-def write_receipt(receipt: Dict[str, Any], receipts_dir: Path) -> Path:
-    receipts_dir.mkdir(parents=True, exist_ok=True)
-    p = receipts_dir / f'{receipt["receipt_hash"]}.receipt.json'
+def write_receipt(store_root: str | Path, receipt: dict) -> str:
+    p = Path(store_root) / 'receipts' / f"{receipt['receipt_hash']}.receipt.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(receipt, indent=2, sort_keys=True), encoding='utf-8')
-    return p
+    return str(p)

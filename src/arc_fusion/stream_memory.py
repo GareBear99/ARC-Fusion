@@ -1,16 +1,18 @@
 from __future__ import annotations
+import time
+from typing import Any
 
-import json
-from pathlib import Path
-from typing import Dict, Any, List
-
-
-def build_timeline(input_manifest: Dict[str, Any], probe_manifest: Dict[str, Any], frame_objects: List[Dict[str, Any]], audio_object: Dict[str, Any] | None) -> Dict[str, Any]:
+def build_timeline(input_manifest: dict, probe_manifest: dict | None = None, frame_manifests: list[dict] | None = None, audio_manifest: dict | None = None) -> dict[str, Any]:
+    frames = frame_manifests or []
     return {
-        'schema': 'arc-fusion.stream-timeline.v1',
-        'source_payload_hash': input_manifest['payload_hash'],
-        'probe_manifest_hash': probe_manifest.get('manifest_hash'),
-        'frame_count': len(frame_objects),
-        'frames': frame_objects,
-        'audio': audio_object,
+        'schema': 'arc-fusion.stream_timeline.v0.2',
+        'created_unix': int(time.time()),
+        'source_payload_hash': input_manifest.get('payload_hash'),
+        'source_manifest_hash': input_manifest.get('manifest_hash'),
+        'probe_manifest_hash': (probe_manifest or {}).get('manifest_hash'),
+        'audio_manifest_hash': (audio_manifest or {}).get('manifest_hash'),
+        'frames': [
+            {'index': i, 'payload_hash': f.get('payload_hash'), 'manifest_hash': f.get('manifest_hash'), 'logical_name': f.get('logical_name')}
+            for i, f in enumerate(frames)
+        ],
     }

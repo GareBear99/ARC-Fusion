@@ -1,15 +1,7 @@
 # Launch Post Draft
 
-I just packaged the first clean version of **ARC-Fusion**: a binary-first cryptographic media runtime for ARC memory, replay, and AI-readable stream cognition.
+I built ARC-Fusion: an FFmpeg-backed media runtime for binary-first ARC memory.
 
-It starts with FFmpeg as the backend, then adds what normal media tools do not provide by default:
+It does not try to replace FFmpeg overnight. Instead, it adds what normal media pipelines usually lack: deterministic binary manifests, Merkle roots, receipts, StreamMemory timelines, SURE seed recipes, language-module mirroring, and LLMBuilder-ready lineage exports.
 
-- binary payload manifests
-- chunk hashes and Merkle roots
-- media receipts
-- StreamMemory timelines
-- SURE seeded reconstruction recipes
-- LLMBuilder-ready lineage exports
-- ARC-Core registration targets
-
-This is not a fake claim that I replaced FFmpeg overnight. It is the correct first layer: make media processing provable, replayable, and connectable to an AI memory/runtime system.
+The goal is a media engine where every video, frame, audio preview, generated view, and dataset row can point back to verifiable source bytes.

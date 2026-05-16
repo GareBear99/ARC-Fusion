@@ -1,16 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "arc-fusion.receipt.v0.2",
   "type": "object",
   "required": [
     "schema",
     "event_type",
     "status",
-    "data",
+    "payload",
     "receipt_hash"
   ],
   "properties": {
     "schema": {
-      "const": "arc-fusion.receipt.v1"
+      "const": "arc-fusion.receipt.v0.2"
     },
     "event_type": {
       "type": "string"
@@ -18,7 +19,7 @@
     "status": {
       "type": "string"
     },
-    "data": {
+    "payload": {
       "type": "object"
     },
     "receipt_hash": {

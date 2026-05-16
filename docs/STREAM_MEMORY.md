@@ -1,14 +1,10 @@
-# StreamMemory Mode
+# StreamMemory
 
-StreamMemory mode turns media into time-addressable visual memory.
+An ingest operation builds a StreamMemory timeline from:
 
-A video ingest can produce:
-
-- original payload manifest
+- source media manifest
 - probe manifest
-- frame manifests
-- audio manifest
-- stream timeline manifest
-- media receipt
+- extracted frame manifests
+- optional audio-preview manifest
 
-The timeline is suitable for future Proto-Synth visualization and LLMBuilder export.
+This lets an AI system reference visual time through payload hashes rather than fragile filenames.

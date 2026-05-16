@@ -1,15 +1,11 @@
 ffmpeg
-media-runtime
-cryptographic-media
-binary-memory
-arc
-streammemory
-ai-memory
-video-processing
-media-lineage
-merkle-tree
-sha256
-media-provenance
-llmbuilder
-computer-vision-datasets
-reproducible-media
+media runtime
+cryptographic media pipeline
+binary first storage
+merkle tree
+stream memory
+ai video memory
+reproducible media processing
+llm dataset lineage
+arc fusion
+arc apache

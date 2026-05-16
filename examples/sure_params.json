@@ -1,6 +1,5 @@
 {
-  "width": 1920,
-  "height": 1080,
-  "palette_seed": "arc",
-  "mode": "voxel-waveform"
+  "visualizer": "voxel-grid",
+  "fps": 30,
+  "resolution": "1920x1080"
 }

@@ -1,11 +1,14 @@
 # Changelog
 
-## 0.1.0
+## v0.2.0
 
-- Initial ARC-Fusion repository package.
-- Added FFmpeg-backed probe/ingest path.
-- Added local ARC-Apache-compatible binary store.
-- Added StreamMemory timeline output.
-- Added SURE media recipe command.
-- Added LLMBuilder lineage export placeholder.
-- Added schemas, docs, tests, and GitHub Actions smoke workflow.
+- Added Ed25519 key generation, receipt signing, and signature verification.
+- Added stronger ingest plan manifests.
+- Added Language Module binary mirror command.
+- Added restore/verify flow improvements.
+- Added ARC-Core registration payload helper.
+- Expanded docs, schemas, tests, and public-facing repo materials.
+
+## v0.1.0
+
+- Initial FFmpeg-backed ARC media runtime package.

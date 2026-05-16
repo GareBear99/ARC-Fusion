@@ -1,150 +1,145 @@
 from __future__ import annotations
-
-import argparse
-import json
-import sys
-import tempfile
+import argparse, json, sys
 from pathlib import Path
-
+from . import __version__
 from .binary_store import BinaryStore
-from .ffmpeg_tools import ffmpeg_versions, probe, extract_frames, extract_audio_preview
+from .ffmpeg_tools import which_ffmpeg, probe_media, extract_frames, extract_audio_preview, plan_ingest
 from .receipts import make_receipt, write_receipt
 from .stream_memory import build_timeline
 from .sure import make_sure_recipe
-from .llmbuilder import export_llmbuilder_dataset
+from .llmbuilder import export_dataset_rows
+from .crypto_utils import keygen, sign_json, verify_signed_json
+from .language_bindings import mirror_language_path
 
-
-def _print(obj):
+def jprint(obj):
     print(json.dumps(obj, indent=2, sort_keys=True))
 
-
 def cmd_doctor(args):
-    _print({'ok': True, 'ffmpeg': ffmpeg_versions()})
+    jprint({'ok': True, 'version': __version__, 'binaries': which_ffmpeg()})
 
+def cmd_init_store(args):
+    BinaryStore(Path(args.store)); jprint({'ok': True, 'store': args.store})
+
+def cmd_keygen(args):
+    jprint(keygen(args.private_key, args.public_key))
+
+def cmd_pack(args):
+    m = BinaryStore(Path(args.store)).pack_file(args.path, media_type=args.media_type, source=args.source)
+    jprint(m)
+
+def cmd_verify(args):
+    store = BinaryStore(Path(args.store)); m = store.load_manifest(args.manifest); jprint(store.verify_manifest(m))
+
+def cmd_restore(args):
+    store = BinaryStore(Path(args.store)); m = store.load_manifest(args.manifest); jprint({'ok': True, 'output': store.restore_manifest(m, args.output)})
 
 def cmd_probe(args):
-    store = BinaryStore(Path(args.store)); store.init()
-    result = probe(Path(args.input))
-    packed = store.write_bytes_object(json.dumps(result, sort_keys=True).encode('utf-8'), logical_name=f'{Path(args.input).name}.ffprobe.json', content_type='application/json')
-    receipt = make_receipt('arc_fusion.media.probe', 'ok' if result.get('ok') else 'error', {'probe_manifest_hash': packed.manifest_hash, 'input': args.input})
-    rp = write_receipt(receipt, store.receipts)
-    _print({'probe_ok': result.get('ok'), 'probe_manifest': str(packed.manifest_path), 'receipt': str(rp)})
-
+    probe = probe_media(args.path)
+    if args.store:
+        store = BinaryStore(Path(args.store))
+        manifest = store.write_json_as_object(probe, f'probe/{Path(args.path).name}.ffprobe.json', source='ffprobe')
+        receipt = make_receipt('arc_fusion.media.probe', {'input': args.path, 'probe_manifest_hash': manifest['manifest_hash']}, 'ok' if probe.get('ok') else 'error')
+        rpath = write_receipt(args.store, receipt)
+        probe['arc_fusion'] = {'probe_manifest': manifest, 'receipt_path': rpath, 'receipt_hash': receipt['receipt_hash']}
+    jprint(probe)
 
 def cmd_ingest(args):
-    store = BinaryStore(Path(args.store)); store.init()
-    inp = Path(args.input)
-    job_dir = store.jobs / f'ingest_{inp.stem}'
-    job_dir.mkdir(parents=True, exist_ok=True)
-
-    input_obj = store.pack_file(inp)
-    probe_result = probe(inp)
-    probe_obj = store.write_bytes_object(json.dumps(probe_result, sort_keys=True).encode('utf-8'), logical_name=f'{inp.name}.ffprobe.json', content_type='application/json')
-
-    frame_objects = []
-    frame_result = {'ok': False, 'skipped': True}
-    if args.fps is not None:
-        frame_dir = job_dir / 'frames'
-        frame_result = extract_frames(inp, frame_dir, float(args.fps))
-        for idx, fp in enumerate(sorted(frame_dir.glob('frame_*.png'))):
-            obj = store.pack_file(fp, logical_name=f'{inp.name}.frame.{idx:06d}.png')
-            frame_objects.append({'index': idx, 'payload_hash': obj.payload_hash, 'manifest_hash': obj.manifest_hash, 'merkle_root': obj.merkle_root})
-
-    audio_object = None
-    audio_result = {'ok': False, 'skipped': True}
-    if args.audio:
-        wav = job_dir / 'audio_preview.wav'
-        audio_result = extract_audio_preview(inp, wav)
-        if wav.exists():
-            obj = store.pack_file(wav, logical_name=f'{inp.name}.audio_preview.wav')
-            audio_object = {'payload_hash': obj.payload_hash, 'manifest_hash': obj.manifest_hash, 'merkle_root': obj.merkle_root}
-
-    input_manifest = {'payload_hash': input_obj.payload_hash, 'manifest_hash': input_obj.manifest_hash}
-    probe_manifest = {'payload_hash': probe_obj.payload_hash, 'manifest_hash': probe_obj.manifest_hash}
-    timeline = build_timeline(input_manifest, probe_manifest, frame_objects, audio_object)
-    timeline_obj = store.write_bytes_object(json.dumps(timeline, sort_keys=True).encode('utf-8'), logical_name=f'{inp.name}.stream_timeline.json', content_type='application/json')
-
-    data = {
-        'input_payload_hash': input_obj.payload_hash,
-        'input_manifest_hash': input_obj.manifest_hash,
-        'probe_manifest_hash': probe_obj.manifest_hash,
-        'timeline_manifest_hash': timeline_obj.manifest_hash,
-        'frame_count': len(frame_objects),
-        'audio': audio_object,
-        'ffmpeg': ffmpeg_versions(),
-        'frame_result_ok': frame_result.get('ok'),
-        'audio_result_ok': audio_result.get('ok'),
-    }
-    receipt = make_receipt('arc_fusion.media.ingest', 'ok', data)
-    rp = write_receipt(receipt, store.receipts)
-    _print({'ok': True, 'input_manifest': str(input_obj.manifest_path), 'timeline_manifest': str(timeline_obj.manifest_path), 'receipt': str(rp), 'frame_count': len(frame_objects)})
-
+    store = BinaryStore(Path(args.store))
+    work = Path(args.work); work.mkdir(parents=True, exist_ok=True)
+    input_manifest = store.pack_file(args.path, logical_name=f'input/{Path(args.path).name}', source='arc-fusion.ingest')
+    probe = probe_media(args.path)
+    probe_manifest = store.write_json_as_object(probe, f'probe/{Path(args.path).name}.json', source='ffprobe')
+    plan = plan_ingest(args.path, fps=args.fps, extract_audio=not args.no_audio)
+    plan_manifest = store.write_json_as_object(plan, f'plans/{Path(args.path).name}.plan.json', source='arc-fusion.plan')
+    frame_result = extract_frames(args.path, work / 'frames', fps=args.fps, limit=args.frame_limit)
+    frame_manifests = [store.pack_file(f, logical_name=f'frames/{Path(f).name}', media_type='image/jpeg', source='ffmpeg.frame') for f in frame_result.get('frames', [])]
+    audio_manifest = None; audio_result = None
+    if not args.no_audio:
+        audio_result = extract_audio_preview(args.path, work / 'audio_preview.wav')
+        if audio_result.get('ok') and audio_result.get('output'):
+            audio_manifest = store.pack_file(audio_result['output'], logical_name='audio/audio_preview.wav', media_type='audio/wav', source='ffmpeg.audio')
+    timeline = build_timeline(input_manifest, probe_manifest, frame_manifests, audio_manifest)
+    timeline_manifest = store.write_json_as_object(timeline, f'timelines/{Path(args.path).name}.timeline.json', source='arc-fusion.streammemory')
+    receipt = make_receipt('arc_fusion.media.ingest', {
+        'input_manifest_hash': input_manifest['manifest_hash'],
+        'probe_manifest_hash': probe_manifest['manifest_hash'],
+        'plan_manifest_hash': plan_manifest['manifest_hash'],
+        'timeline_manifest_hash': timeline_manifest['manifest_hash'],
+        'frame_count': len(frame_manifests),
+        'audio_manifest_hash': (audio_manifest or {}).get('manifest_hash'),
+        'ffmpeg': which_ffmpeg(),
+    }, 'ok')
+    rpath = write_receipt(args.store, receipt)
+    if args.sign_private_key:
+        signed = sign_json(receipt, args.sign_private_key)
+        Path(rpath).write_text(json.dumps(signed, indent=2, sort_keys=True), encoding='utf-8')
+    jprint({'ok': True, 'input_manifest': input_manifest, 'timeline_manifest': timeline_manifest, 'receipt_path': rpath, 'receipt_hash': receipt['receipt_hash'], 'frames': len(frame_manifests), 'ffmpeg_frame_result': frame_result, 'ffmpeg_audio_result': audio_result})
 
 def cmd_receipt(args):
-    store = BinaryStore(Path(args.store)); store.init()
-    job = json.loads(Path(args.job).read_text(encoding='utf-8'))
-    receipt = make_receipt(args.event_type, args.status, job)
-    rp = write_receipt(receipt, store.receipts)
-    _print({'ok': True, 'receipt': str(rp), 'receipt_hash': receipt['receipt_hash']})
+    payload = json.loads(Path(args.payload_json).read_text(encoding='utf-8')) if args.payload_json else {}
+    r = make_receipt(args.event_type, payload, args.status)
+    if args.store:
+        path = write_receipt(args.store, r); r['receipt_path'] = path
+    jprint(r)
 
+def cmd_sign_receipt(args):
+    obj = json.loads(Path(args.receipt).read_text(encoding='utf-8'))
+    signed = sign_json(obj, args.private_key)
+    Path(args.output or args.receipt).write_text(json.dumps(signed, indent=2, sort_keys=True), encoding='utf-8')
+    jprint({'ok': True, 'output': args.output or args.receipt})
 
-def cmd_sure_recipe(args):
+def cmd_verify_receipt(args):
+    obj = json.loads(Path(args.receipt).read_text(encoding='utf-8'))
+    jprint(verify_signed_json(obj, args.public_key))
+
+def cmd_sure(args):
     params = json.loads(Path(args.params).read_text(encoding='utf-8')) if args.params else {}
-    recipe = make_sure_recipe(args.generator, args.seed, params, args.expected_output_hash)
-    if args.out:
-        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-        Path(args.out).write_text(json.dumps(recipe, indent=2, sort_keys=True), encoding='utf-8')
-    _print(recipe)
+    recipe = make_sure_recipe(args.generator_id, args.seed, params, args.expected_output_hash)
+    if args.store:
+        m = BinaryStore(Path(args.store)).write_json_as_object(recipe, f'sure/{recipe["recipe_hash"]}.json', source='sure-recipe')
+        recipe['manifest_hash'] = m['manifest_hash']
+    jprint(recipe)
 
+def cmd_mirror_language(args):
+    jprint(mirror_language_path(args.store, args.path))
 
 def cmd_export_llmbuilder(args):
-    timeline = json.loads(Path(args.timeline).read_text(encoding='utf-8'))
-    _print(export_llmbuilder_dataset(timeline, Path(args.out)))
-
+    timeline = json.loads(Path(args.timeline_json).read_text(encoding='utf-8'))
+    jprint(export_dataset_rows(timeline, args.output))
 
 def cmd_smoke(args):
-    with tempfile.TemporaryDirectory() as td:
-        td = Path(td)
-        sample = td / 'sample.txt'
-        sample.write_text('arc fusion smoke\n', encoding='utf-8')
-        store = BinaryStore(td / 'store'); store.init()
-        obj = store.pack_file(sample)
-        ver = store.verify_manifest(obj.manifest_path)
-        restored = store.restore(obj.manifest_path, td / 'restored.txt')
-        if not (ver.get('ok') and restored.get('ok')):
-            _print({'ok': False, 'verify': ver, 'restore': restored})
-            return 1
-    _print({'ok': True, 'message': 'ARC-Fusion smoke test passed'})
-    return 0
-
+    store = BinaryStore(Path(args.store)); sample = Path(args.store) / 'smoke.txt'; sample.write_text('arc-fusion smoke', encoding='utf-8')
+    m = store.pack_file(sample, logical_name='smoke.txt', source='smoke')
+    v = store.verify_manifest(m)
+    r = make_receipt('arc_fusion.smoke', {'manifest_hash': m['manifest_hash']}, 'ok' if v['ok'] else 'error')
+    write_receipt(args.store, r)
+    jprint({'ok': v['ok'], 'manifest_hash': m['manifest_hash'], 'receipt_hash': r['receipt_hash']})
+    return 0 if v['ok'] else 1
 
 def build_parser():
     p = argparse.ArgumentParser(prog='arc-fusion')
     sub = p.add_subparsers(dest='cmd', required=True)
-
-    sp = sub.add_parser('doctor'); sp.set_defaults(func=cmd_doctor)
-
-    sp = sub.add_parser('probe'); sp.add_argument('input'); sp.add_argument('--store', default='.arc_fusion_store'); sp.set_defaults(func=cmd_probe)
-
-    sp = sub.add_parser('ingest'); sp.add_argument('input'); sp.add_argument('--store', default='.arc_fusion_store'); sp.add_argument('--fps', default='1'); sp.add_argument('--audio', action='store_true'); sp.add_argument('--receipt', action='store_true'); sp.set_defaults(func=cmd_ingest)
-
-    sp = sub.add_parser('receipt'); sp.add_argument('--job', required=True); sp.add_argument('--store', default='.arc_fusion_store'); sp.add_argument('--event-type', default='arc_fusion.custom'); sp.add_argument('--status', default='ok'); sp.set_defaults(func=cmd_receipt)
-
-    sp = sub.add_parser('sure-recipe'); sp.add_argument('--generator', required=True); sp.add_argument('--seed', required=True); sp.add_argument('--params'); sp.add_argument('--expected-output-hash'); sp.add_argument('--out'); sp.set_defaults(func=cmd_sure_recipe)
-
-    sp = sub.add_parser('export-llmbuilder'); sp.add_argument('--timeline', required=True); sp.add_argument('--out', required=True); sp.set_defaults(func=cmd_export_llmbuilder)
-
-    sp = sub.add_parser('smoke'); sp.set_defaults(func=cmd_smoke)
+    def add_store(sp): sp.add_argument('--store', default='.arc_fusion_store')
+    s=sub.add_parser('doctor'); s.set_defaults(func=cmd_doctor)
+    s=sub.add_parser('init-store'); add_store(s); s.set_defaults(func=cmd_init_store)
+    s=sub.add_parser('keygen'); s.add_argument('--private-key', default='arc_fusion_ed25519_private.pem'); s.add_argument('--public-key', default='arc_fusion_ed25519_public.pem'); s.set_defaults(func=cmd_keygen)
+    s=sub.add_parser('pack'); s.add_argument('path'); add_store(s); s.add_argument('--media-type', default='application/octet-stream'); s.add_argument('--source', default='manual'); s.set_defaults(func=cmd_pack)
+    s=sub.add_parser('verify'); s.add_argument('manifest'); add_store(s); s.set_defaults(func=cmd_verify)
+    s=sub.add_parser('restore'); s.add_argument('manifest'); add_store(s); s.add_argument('--output'); s.set_defaults(func=cmd_restore)
+    s=sub.add_parser('probe'); s.add_argument('path'); s.add_argument('--store'); s.set_defaults(func=cmd_probe)
+    s=sub.add_parser('ingest'); s.add_argument('path'); add_store(s); s.add_argument('--work', default='.arc_fusion_work'); s.add_argument('--fps', type=float, default=1.0); s.add_argument('--frame-limit', type=int, default=12); s.add_argument('--no-audio', action='store_true'); s.add_argument('--sign-private-key'); s.set_defaults(func=cmd_ingest)
+    s=sub.add_parser('receipt'); s.add_argument('--event-type', default='arc_fusion.manual'); s.add_argument('--payload-json'); s.add_argument('--status', default='ok'); s.add_argument('--store'); s.set_defaults(func=cmd_receipt)
+    s=sub.add_parser('sign-receipt'); s.add_argument('receipt'); s.add_argument('--private-key', required=True); s.add_argument('--output'); s.set_defaults(func=cmd_sign_receipt)
+    s=sub.add_parser('verify-receipt'); s.add_argument('receipt'); s.add_argument('--public-key', required=True); s.set_defaults(func=cmd_verify_receipt)
+    s=sub.add_parser('sure-recipe'); s.add_argument('--generator-id', required=True); s.add_argument('--seed', required=True); s.add_argument('--params'); s.add_argument('--expected-output-hash'); s.add_argument('--store'); s.set_defaults(func=cmd_sure)
+    s=sub.add_parser('mirror-language'); s.add_argument('path'); add_store(s); s.set_defaults(func=cmd_mirror_language)
+    s=sub.add_parser('export-llmbuilder'); s.add_argument('timeline_json'); s.add_argument('--output', required=True); s.set_defaults(func=cmd_export_llmbuilder)
+    s=sub.add_parser('smoke'); add_store(s); s.set_defaults(func=cmd_smoke)
     return p
 
-
 def main(argv=None):
-    parser = build_parser()
-    args = parser.parse_args(argv)
-    res = args.func(args)
-    if isinstance(res, int):
-        return res
-    return 0
+    args = build_parser().parse_args(argv)
+    return args.func(args) or 0
 
 if __name__ == '__main__':
     raise SystemExit(main())

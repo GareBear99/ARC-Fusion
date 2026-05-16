@@ -1,21 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "arc-fusion.stream_timeline.v0.2",
   "type": "object",
   "required": [
     "schema",
     "source_payload_hash",
-    "frame_count",
     "frames"
   ],
   "properties": {
     "schema": {
-      "const": "arc-fusion.stream-timeline.v1"
+      "const": "arc-fusion.stream_timeline.v0.2"
     },
     "source_payload_hash": {
-      "type": "string"
-    },
-    "frame_count": {
-      "type": "integer"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "frames": {
       "type": "array"

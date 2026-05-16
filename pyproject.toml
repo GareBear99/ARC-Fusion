@@ -4,20 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arc-fusion"
-version = "0.1.0"
-description = "Binary-first cryptographic media runtime for ARC memory, replay, and AI-readable stream cognition."
+version = "0.2.0"
+description = "ARC-native binary-first cryptographic media runtime backed by FFmpeg."
 readme = "README.md"
-requires-python = ">=3.9"
-license = {text = "Apache-2.0"}
-authors = [{name = "Gary Doman / GareBear99"}]
-keywords = ["ffmpeg", "media", "cryptographic", "binary-memory", "arc", "streammemory", "ai-lineage"]
-dependencies = []
-
-[project.optional-dependencies]
-dev = ["pytest>=7"]
+requires-python = ">=3.10"
+authors = [{name = "Gary Doman / TizWildinEntertainment"}]
+license = {text = "MIT"}
+dependencies = ["cryptography>=41"]
 
 [project.scripts]
 arc-fusion = "arc_fusion.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -1,32 +1,22 @@
 # Roadmap
 
-## v0.1
+## Phase 1: Complete
+- FFmpeg-backed runtime
+- Binary object store
+- Manifest/receipt proof path
+- StreamMemory timeline
+- SURE recipe scaffold
+- Language/LLMBuilder hooks
 
-- CLI scaffold
-- local binary store
-- probe/ingest/receipt commands
-- StreamMemory timeline output
-- SURE recipe command
-- LLMBuilder placeholder export
+## Phase 2
+- ARC-Core registration routes
+- Encrypted payload mode
+- Scene detection
+- OCR/transcription provider hooks
+- Proto-Synth visual graph
 
-## v0.2
-
-- ARC-Apache package dependency
-- ARC-Core registration client
-- Ed25519 receipt signing
-- AES-GCM encrypted artifact mode
-- manifest verification command
-
-## v0.3
-
-- OCR/transcript/caption hooks
-- scene detection timeline
-- waveform feature extraction
-- Proto-Synth timeline viewer contract
-
-## v1.0
-
-- stable ARC-Fusion media receipt spec
-- real ARC-Core integration
-- media bundle export/import
-- reproducible command-plan replay
+## Phase 3
+- ARC-native filters
+- Lightweight frame/audio codecs
+- Distributed chunk replication
+- Deterministic replay receipts

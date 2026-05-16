@@ -1,26 +1,18 @@
 # ARC-Apache Integration
 
-ARC-Fusion expects ARC-Apache to provide binary object storage and receipts. This repo includes a local compatible store for development.
+ARC-Core should register ARC-Fusion outputs as authority events using payload hash, manifest hash, Merkle root, and receipt hash.
 
-## ARC-Core route target
-
-```http
-POST /arc-apache/payloads/register
-POST /arc-fusion/media/receipts/register
-GET  /arc-fusion/media/{receipt_hash}
-```
-
-## Registration payload
+Suggested event:
 
 ```json
 {
+  "event_type": "arc_apache.payload.registered",
   "source": "arc-fusion",
-  "event_type": "arc_fusion.media.ingest",
-  "input_payload_hash": "sha256...",
-  "timeline_manifest_hash": "sha256...",
-  "receipt_hash": "sha256...",
-  "merkle_root": "sha256..."
+  "payload_hash": "...",
+  "manifest_hash": "...",
+  "merkle_root": "...",
+  "receipt_hash": "..."
 }
 ```
 
-ARC-Core remains authority. ARC-Fusion remains a media worker and memory producer.
+ARC-Core should not store massive media blobs. It should store authority references and policy decisions.
