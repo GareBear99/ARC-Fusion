@@ -1,14 +1,12 @@
 # Changelog
 
-## v0.2.0
+## 0.3.0
 
-- Added Ed25519 key generation, receipt signing, and signature verification.
-- Added stronger ingest plan manifests.
+- Added ARC-Core route stub and SQLite migration.
+- Added sampled scene/keyframe index manifests.
+- Added stronger StreamMemory timeline payload.
+- Added Ed25519 signing and verification flow.
 - Added Language Module binary mirror command.
-- Added restore/verify flow improvements.
-- Added ARC-Core registration payload helper.
-- Expanded docs, schemas, tests, and public-facing repo materials.
-
-## v0.1.0
-
-- Initial FFmpeg-backed ARC media runtime package.
+- Added LLMBuilder lineage export scaffold.
+- Added public positioning and integration docs.
+- Added tests for store, restore, receipts, signatures, and SURE recipes.

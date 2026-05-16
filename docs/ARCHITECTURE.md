@@ -1,10 +1,37 @@
 # Architecture
 
-ARC-Fusion has four layers:
+ARC-Fusion sits between normal media files and the ARC ecosystem.
 
-1. **Media backend**: FFprobe/FFmpeg execution and planning.
-2. **Binary memory**: chunked object store, SHA-256 hashes, Merkle roots, manifests.
-3. **Receipt layer**: job receipts and optional Ed25519 signatures.
-4. **ARC views**: StreamMemory timelines, SURE recipes, Language Module mirrors, LLMBuilder exports.
+```text
+media file
+  -> FFprobe / FFmpeg planner
+  -> extracted artifacts
+  -> binary object store
+  -> manifests + Merkle roots
+  -> receipts
+  -> ARC-Core authority registration
+  -> StreamMemory / LLMBuilder / Proto-Synth views
+```
 
-Canonical truth is binary-first. Human-readable JSON is a view that is itself packed as a binary object when it must persist.
+## Core modules
+
+- `store.py` — binary object packing, verification, restoration, receipts
+- `crypto.py` — SHA-256, canonical JSON, Merkle roots, Ed25519 signing
+- `ffmpeg_backend.py` — FFprobe/FFmpeg capability layer
+- `pipeline.py` — probe, ingest, SURE recipe flows
+- `cli.py` — public command surface
+
+## Binary-first model
+
+Every durable artifact gets converted into bytes and packed:
+
+- original media
+- ffprobe JSON
+- extracted frames
+- audio preview WAV
+- sampled scene index
+- StreamMemory timeline
+- generated recipes
+- LLMBuilder lineage records
+
+ARC-Core should only store references, not heavy bytes.

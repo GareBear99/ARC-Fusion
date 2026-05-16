@@ -1,24 +1,27 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "SURE Media Recipe",
+  "title": "ARC-Fusion Receipt",
   "type": "object",
   "required": [
     "schema",
-    "generator_id",
-    "seed",
-    "params_hash"
+    "event_type",
+    "payload",
+    "receipt_hash"
   ],
   "properties": {
     "schema": {
-      "const": "arc-fusion.sure-media-recipe.v1"
+      "const": "arc-fusion.receipt.v1"
     },
-    "generator_id": {
+    "event_type": {
       "type": "string"
     },
-    "seed": {
+    "payload": {
+      "type": "object"
+    },
+    "receipt_hash": {
       "type": "string"
     },
-    "params_hash": {
+    "signature": {
       "type": "string"
     }
   }

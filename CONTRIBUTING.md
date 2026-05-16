@@ -1,3 +1,10 @@
 # Contributing
 
-Keep changes deterministic, testable, and honest. Do not claim FFmpeg replacement status until ARC-native codecs/muxers are actually implemented. Prefer small verified milestones over vague autonomy claims.
+Keep the project binary-first, receipt-first, and honest.
+
+Rules:
+
+1. Do not store giant blobs in ARC-Core.
+2. Do not invent AI labels without lineage.
+3. Do not claim FFmpeg replacement until native codec modules exist.
+4. Every durable artifact should be packable and verifiable.

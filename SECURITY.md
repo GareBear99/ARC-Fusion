@@ -1,11 +1,16 @@
-# Security Policy
+# Security
 
-ARC-Fusion treats media, logs, and model artifacts as untrusted input. Do not execute payload contents. Verify manifests before using restored artifacts. Receipt signing proves the signer controlled the private key at signing time; it does not prove semantic correctness of the media.
+ARC-Fusion uses SHA-256 hashes, Merkle roots, and optional Ed25519 receipt signing.
 
-## Current cryptography
+## Current security boundary
 
-- SHA-256 for payload and chunk identity
-- Merkle root for chunk-set integrity
-- Ed25519 for receipt signatures
+- Hashes detect mutation.
+- Merkle roots summarize chunk sets.
+- Signatures verify receipt authorship.
+- Raw media bytes are not stored in ARC-Core.
 
-Encryption is planned but should not be claimed until a reviewed AEAD implementation lands.
+## Not yet complete
+
+- AES-GCM payload encryption is planned for v0.4.
+- Remote trust federation is not implemented.
+- Do not treat unsigned receipts as privileged authority.

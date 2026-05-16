@@ -1,23 +1,24 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "arc-fusion.stream_timeline.v0.2",
+  "title": "ARC-Fusion Stream Timeline",
   "type": "object",
   "required": [
     "schema",
-    "source_payload_hash",
-    "frames"
+    "input_manifest_hash",
+    "probe_manifest_hash",
+    "frame_manifest_hashes"
   ],
   "properties": {
     "schema": {
-      "const": "arc-fusion.stream_timeline.v0.2"
+      "const": "arc-fusion.stream-timeline.v1"
     },
-    "source_payload_hash": {
-      "type": [
-        "string",
-        "null"
-      ]
+    "input_manifest_hash": {
+      "type": "string"
     },
-    "frames": {
+    "probe_manifest_hash": {
+      "type": "string"
+    },
+    "frame_manifest_hashes": {
       "type": "array"
     }
   }

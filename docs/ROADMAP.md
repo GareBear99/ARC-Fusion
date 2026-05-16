@@ -1,22 +1,31 @@
 # Roadmap
 
-## Phase 1: Complete
-- FFmpeg-backed runtime
+## v0.3.0 complete
+
+- Repo-ready CLI
 - Binary object store
-- Manifest/receipt proof path
-- StreamMemory timeline
-- SURE recipe scaffold
-- Language/LLMBuilder hooks
+- Receipts
+- Ed25519 signing
+- FFmpeg-backed ingest
+- Scene/keyframe index
+- ARC-Core route/migration stubs
+- Language mirror
+- LLMBuilder export scaffold
 
-## Phase 2
-- ARC-Core registration routes
-- Encrypted payload mode
-- Scene detection
-- OCR/transcription provider hooks
-- Proto-Synth visual graph
+## v0.4.0 target
 
-## Phase 3
-- ARC-native filters
-- Lightweight frame/audio codecs
-- Distributed chunk replication
-- Deterministic replay receipts
+- Live ARC-Core registration client
+- Optional AES-GCM payload encryption
+- Better FFmpeg command-plan receipts
+- Real scene detection mode using ffmpeg scene filter
+- OCR adapter boundary
+- Whisper/transcription adapter boundary
+- Proto-Synth timeline export
+
+## v1.0 target
+
+- Stable binary media memory runtime
+- ARC-Core authority integration
+- signed/encrypted payload policy
+- deterministic replay receipts
+- dataset export with verified labels

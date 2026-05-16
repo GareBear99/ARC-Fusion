@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "arc-fusion.binary_manifest.v0.2",
+  "title": "ARC-Fusion Binary Manifest",
   "type": "object",
   "required": [
     "schema",
@@ -12,7 +12,7 @@
   ],
   "properties": {
     "schema": {
-      "const": "arc-fusion.binary_manifest.v0.2"
+      "const": "arc-fusion.binary-manifest.v1"
     },
     "payload_hash": {
       "type": "string"

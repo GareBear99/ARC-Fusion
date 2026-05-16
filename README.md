@@ -1,72 +1,62 @@
 # ARC-Fusion
 
-**ARC-Fusion** is an ARC-native, binary-first cryptographic media runtime. It uses FFmpeg/FFprobe as the backend media engine while adding deterministic binary storage, Merkle manifests, receipts, StreamMemory timelines, SURE seed recipes, language hooks, and LLMBuilder lineage exports.
+**ARC-Fusion** is an ARC-native, FFmpeg-backed media proof runtime.
 
-> Honest status: ARC-Fusion is not a full FFmpeg replacement yet. It is the correct first production layer: a media cognition and proof runtime that can later replace selected FFmpeg subsystems with ARC-native modules.
+It is not trying to replace FFmpeg on day one. It uses FFmpeg/FFprobe as proven backend tools while adding the layers FFmpeg does not provide by itself:
 
-## Why this exists
+- binary-first media memory
+- chunked object storage
+- SHA-256 payload identity
+- Merkle roots
+- signed receipts
+- StreamMemory timelines
+- scene/keyframe indexes
+- SURE seeded media recipes
+- ARC Language Module mirroring
+- LLMBuilder dataset lineage
+- ARC-Core authority registration stubs
 
-FFmpeg transforms media. ARC-Fusion transforms media **and proves what happened**. Every durable artifact can be stored as a binary object first, then referenced by cryptographic manifests and receipts.
+## Doctrine
 
 ```text
-media input -> ffprobe/ffmpeg plan -> binary object store -> manifest -> receipt -> StreamMemory / ARC-Core / LLMBuilder
+media information -> deterministic binary object -> hash -> Merkle root -> manifest -> receipt -> ARC authority reference
 ```
 
-## Capabilities in v0.2
+Human-readable JSON is a projection. The durable truth is the binary object plus cryptographic proof.
 
-- FFprobe-backed media probe command
-- FFmpeg-backed frame extraction and audio-preview extraction
-- Binary object packing with chunk hashes, SHA-256 payload hashes, and Merkle roots
-- Restore and verification commands
-- Receipt creation for media jobs
-- Ed25519 key generation, receipt signing, and receipt verification
-- StreamMemory timeline generation
-- SURE media recipe generation
-- ARC Language Module mirroring into binary objects
-- LLMBuilder JSONL export scaffold for verified media-derived dataset rows
-- Public-facing docs, schemas, tests, and GitHub Actions smoke workflow
-
-## Install locally
+## Install
 
 ```bash
-python3 -m pip install -e .
+python -m pip install -e .
+```
+
+## CLI
+
+```bash
 arc-fusion doctor
-```
-
-FFmpeg is optional for packaging, tests, and binary proof commands, but required for real media frame/audio extraction.
-
-## Quickstart
-
-```bash
 arc-fusion init-store --store .arc_fusion_store
-arc-fusion pack ./input.mp4 --store .arc_fusion_store --media-type video/mp4
-arc-fusion verify .arc_fusion_store/manifests/<manifest>.manifest.json --store .arc_fusion_store
+arc-fusion pack ./video.mp4 --store .arc_fusion_store
+arc-fusion ingest ./video.mp4 --store .arc_fusion_store --fps 1 --frame-limit 12
+arc-fusion keygen --store .arc_fusion_store
+arc-fusion sign-receipt .arc_fusion_store/receipts/<hash>.receipt.json .arc_fusion_store/keys/arc_fusion_ed25519_private.pem
+arc-fusion verify-receipt .arc_fusion_store/receipts/<hash>.receipt.json .arc_fusion_store/keys/arc_fusion_ed25519_public.pem
 ```
 
-Media ingest:
+## Current capability
 
-```bash
-arc-fusion ingest ./input.mp4 --store .arc_fusion_store --work .arc_fusion_work --fps 1 --frame-limit 12
-```
+v0.3.0 can:
 
-Receipt signing:
+- pack arbitrary files into ARC-compatible binary manifests
+- verify and restore binary payloads
+- run ffprobe when available
+- extract sampled frames and audio previews when FFmpeg is available
+- generate StreamMemory timeline manifests
+- generate scene/keyframe index manifests
+- create and sign receipts
+- mirror ARC Language Module files into binary storage
+- emit LLMBuilder lineage placeholder rows without inventing labels
+- provide ARC-Core route and SQLite migration stubs
 
-```bash
-arc-fusion keygen --private-key private.pem --public-key public.pem
-arc-fusion sign-receipt .arc_fusion_store/receipts/<receipt>.receipt.json --private-key private.pem
-arc-fusion verify-receipt .arc_fusion_store/receipts/<receipt>.receipt.json --public-key public.pem
-```
+## Honest boundary
 
-## ARC ecosystem role
-
-- **ARC-Apache**: binary memory substrate and receipt doctrine
-- **ARC-Core**: authority registration layer
-- **ARC-StreamMemory**: visual/time memory consumer
-- **SURE**: deterministic seed-recipe reconstruction model
-- **ARC Language Module**: lexical and metadata spine
-- **ARC-Neuron LLMBuilder**: verified dataset/model lineage consumer
-- **Proto-Synth Grid Engine**: future visual graph/shell
-
-## Public positioning
-
-ARC-Fusion should be described as an **FFmpeg-compatible ARC media runtime**, not as a completed FFmpeg clone. This protects credibility while making the ambition clear.
+ARC-Fusion is not a codec library yet. It is a media memory, proof, and lineage runtime that uses FFmpeg as the execution backend. The long-term path is to replace selected modules only after the proof plane, timeline model, and ARC authority integration are stable.

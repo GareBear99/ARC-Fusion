@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ARC-Fusion Scene Index",
+  "type": "object",
+  "required": [
+    "schema",
+    "method",
+    "items"
+  ],
+  "properties": {
+    "schema": {
+      "const": "arc-fusion.scene-index.v1"
+    },
+    "method": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array"
+    }
+  }
+}
